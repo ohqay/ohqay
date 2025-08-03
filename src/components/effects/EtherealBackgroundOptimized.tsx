@@ -42,27 +42,32 @@ const useDeviceCapability = () => {
       const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
       if (debugInfo) {
         const gpu = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
-        // Simple GPU detection - can be expanded
-        if (gpu.includes('Intel') || isSafari) {
+        // Detect Apple Silicon and Intel GPUs
+        if (gpu.includes('Intel')) {
           setCapability('low');
-        } else if (gpu.includes('Apple')) {
+        } else if (gpu.includes('Apple') && !gpu.includes('M1') && !gpu.includes('M2') && !gpu.includes('M3') && !gpu.includes('M4')) {
           setCapability('medium');
         }
       }
+    }
+
+    // Safari gets automatic downgrade
+    if (isSafari) {
+      setCapability(prev => prev === 'high' ? 'medium' : 'low');
     }
 
     // Check device memory if available
     if ('deviceMemory' in navigator) {
       const memory = (navigator as any).deviceMemory;
       if (memory < 4) setCapability('low');
-      else if (memory < 8) setCapability('medium');
+      else if (memory < 8) setCapability(prev => prev === 'high' ? 'medium' : prev);
     }
 
     // Check CPU cores
     if ('hardwareConcurrency' in navigator) {
       const cores = navigator.hardwareConcurrency;
       if (cores < 4) setCapability('low');
-      else if (cores < 8) setCapability('medium');
+      else if (cores < 8) setCapability(prev => prev === 'high' ? 'medium' : prev);
     }
   }, []);
 
@@ -80,38 +85,41 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
     switch (capability) {
       case 'low':
         return {
+          renderScale: 0.25, // Render at 25% resolution
+          animationScale: 25,
+          animationSpeed: 20,
+          noiseOpacity: 0.3,
+          noiseScale: 2,
+          numOctaves: 1,
+          blur: 2,
+          simplifiedFilter: true,
+        };
+      case 'medium':
+        return {
+          renderScale: 0.5, // Render at 50% resolution
           animationScale: 50,
           animationSpeed: 30,
           noiseOpacity: 0.5,
           noiseScale: 1.5,
           numOctaves: 1,
           blur: 4,
-          disableSecondDisplacement: true,
+          simplifiedFilter: true,
         };
-      case 'medium':
+      default:
         return {
+          renderScale: 0.75, // Render at 75% resolution for performance
           animationScale: 75,
           animationSpeed: 45,
           noiseOpacity: 0.65,
           noiseScale: 1.3,
-          numOctaves: 1,
-          blur: 6,
-          disableSecondDisplacement: true,
-        };
-      default:
-        return {
-          animationScale: 100,
-          animationSpeed: 60,
-          noiseOpacity: 0.75,
-          noiseScale: 1.2,
           numOctaves: 2,
-          blur: 8,
-          disableSecondDisplacement: false,
+          blur: 6,
+          simplifiedFilter: false,
         };
     }
   }, [capability]);
   
-  const displacementScale = mapRange(config.animationScale, 1, 100, 10, 50);
+  const displacementScale = mapRange(config.animationScale, 1, 100, 5, 30);
 
   // Intersection Observer for visibility detection
   useEffect(() => {
@@ -136,9 +144,10 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
   // Pause animation when page is not visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (containerRef.current) {
-        containerRef.current.style.animationPlayState = document.hidden ? 'paused' : 'running';
-      }
+      const elements = containerRef.current?.querySelectorAll(`.${styles.etherealFilter}`);
+      elements?.forEach(el => {
+        (el as HTMLElement).style.animationPlayState = document.hidden ? 'paused' : 'running';
+      });
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -147,10 +156,58 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
     };
   }, []);
 
-  // Don't render if not visible
+  // Don't render complex filter if not visible
   if (!isVisible) {
     return <div ref={containerRef} className={styles.container} />;
   }
+
+  const filterContent = config.simplifiedFilter ? (
+    // Simplified filter for low-end devices
+    <filter id={id} x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence
+        result="turbulence"
+        numOctaves={config.numOctaves}
+        baseFrequency={`${mapRange(config.animationScale, 0, 100, 0.002, 0.001)}`}
+        seed="0"
+        type="fractalNoise"
+      />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="turbulence"
+        scale={displacementScale}
+        result="output"
+      />
+    </filter>
+  ) : (
+    // Standard filter for capable devices
+    <filter id={id} x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence
+        result="turbulence"
+        numOctaves={config.numOctaves}
+        baseFrequency={`${mapRange(config.animationScale, 0, 100, 0.001, 0.0005)},${mapRange(
+          config.animationScale,
+          0,
+          100,
+          0.004,
+          0.002
+        )}`}
+        seed="0"
+        type="turbulence"
+      />
+      <feColorMatrix
+        in="turbulence"
+        result="coloredNoise"
+        type="matrix"
+        values="3 0 0 0 0.8  3 0 0 0 0.8  3 0 0 0 0.8  1 0 0 0 0"
+      />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="coloredNoise"
+        scale={displacementScale}
+        result="output"
+      />
+    </filter>
+  );
 
   return (
     <div
@@ -162,45 +219,17 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
         style={{
           inset: -displacementScale,
           filter: `url(#${id}) blur(${config.blur}px)`,
+          transform: `scale(${1 / config.renderScale})`,
+          transformOrigin: 'center',
+          width: `${100 * config.renderScale}%`,
+          height: `${100 * config.renderScale}%`,
+          left: `${50 - (50 * config.renderScale)}%`,
+          top: `${50 - (50 * config.renderScale)}%`,
         }}
       >
         <svg style={{ position: 'absolute', width: 0, height: 0 }}>
           <defs>
-            <filter id={id} x="-25%" y="-25%" width="150%" height="150%">
-              <feTurbulence
-                result="turbulence"
-                numOctaves={config.numOctaves}
-                baseFrequency={`${mapRange(config.animationScale, 0, 100, 0.001, 0.0005)},${mapRange(
-                  config.animationScale,
-                  0,
-                  100,
-                  0.004,
-                  0.002
-                )}`}
-                seed="0"
-                type="turbulence"
-              />
-              <feColorMatrix
-                in="turbulence"
-                result="coloredNoise"
-                type="matrix"
-                values="3.5 0 0 0 0.9  3.5 0 0 0 0.9  3.5 0 0 0 0.9  1 0 0 0 0"
-              />
-              <feDisplacementMap
-                in="SourceGraphic"
-                in2="coloredNoise"
-                scale={displacementScale}
-                result={config.disableSecondDisplacement ? "output" : "firstDisplacement"}
-              />
-              {!config.disableSecondDisplacement && (
-                <feDisplacementMap
-                  in="firstDisplacement"
-                  in2="turbulence"
-                  scale={displacementScale * 0.5}
-                  result="output"
-                />
-              )}
-            </filter>
+            {filterContent}
           </defs>
         </svg>
         <div
@@ -208,18 +237,20 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
           style={{
             maskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
             WebkitMaskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
-            animationDuration: `${config.animationSpeed / 18}s`,
+            animationDuration: `${config.animationSpeed / 15}s`,
           }}
         />
       </div>
 
-      {/* Noise overlay */}
+      {/* Noise overlay - also scaled for performance */}
       <div
         className={styles.noiseOverlay}
         style={{
           backgroundImage: `url("https://framerusercontent.com/images/g0QcWrxr87K0ufOxIUFBakwYA8.png")`,
           backgroundSize: config.noiseScale * 200,
           opacity: config.noiseOpacity / 2,
+          transform: `scale(${1 / (config.renderScale * 0.8)})`,
+          transformOrigin: 'center',
         }}
       />
     </div>
