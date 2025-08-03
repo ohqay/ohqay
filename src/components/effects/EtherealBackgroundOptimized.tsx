@@ -1,4 +1,5 @@
 import React, { useRef, useId, useEffect, useState, useMemo, useCallback } from 'react';
+import { animate, useMotionValue, AnimationPlaybackControls } from 'framer-motion';
 
 interface EtherealBackgroundProps {
   className?: string;
@@ -73,40 +74,18 @@ const useDeviceCapability = () => {
   return capability;
 };
 
-// Frame rate limiter for animation updates
-const useAnimationFrame = (callback: (time: number) => void, fps: number = 30) => {
-  const frameTime = 1000 / fps;
-  const lastFrameTime = useRef(0);
-  const rafId = useRef<number>();
-  const isPaused = useRef(false);
-
-  const animate = useCallback((time: number) => {
-    if (isPaused.current) {
-      rafId.current = requestAnimationFrame(animate);
-      return;
-    }
-
-    const elapsed = time - lastFrameTime.current;
-    if (elapsed >= frameTime) {
-      lastFrameTime.current = time - (elapsed % frameTime);
-      callback(time);
-    }
-    rafId.current = requestAnimationFrame(animate);
-  }, [callback, frameTime]);
+// Preload mask image
+const useMaskImage = (url: string) => {
+  const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    rafId.current = requestAnimationFrame(animate);
-    return () => {
-      if (rafId.current) {
-        cancelAnimationFrame(rafId.current);
-      }
-    };
-  }, [animate]);
+    const img = new Image();
+    img.onload = () => setIsLoaded(true);
+    img.onerror = () => setIsLoaded(true); // Still render even if mask fails
+    img.src = url;
+  }, [url]);
 
-  return {
-    pause: () => { isPaused.current = true; },
-    resume: () => { isPaused.current = false; }
-  };
+  return isLoaded;
 };
 
 // Styles
@@ -116,13 +95,11 @@ const styles = {
     inset: 0,
     overflow: 'hidden',
     zIndex: 0,
-    willChange: 'transform',
   },
   filterLayer: {
     position: 'absolute' as const,
     inset: 0,
-    willChange: 'filter, transform',
-    transition: 'transform 0.3s ease-out, width 0.3s ease-out, height 0.3s ease-out, left 0.3s ease-out, top 0.3s ease-out',
+    willChange: 'filter',
   },
   backgroundLayer: {
     backgroundColor: 'hsl(0 0% 20%)',
@@ -134,6 +111,7 @@ const styles = {
     WebkitMaskSize: 'cover',
     WebkitMaskRepeat: 'no-repeat',
     WebkitMaskPosition: 'center',
+    willChange: 'filter',
   },
   noiseOverlay: {
     position: 'absolute' as const,
@@ -147,86 +125,58 @@ const styles = {
 export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(({ className }) => {
   const id = useInstanceId();
   const containerRef = useRef<HTMLDivElement>(null);
-  const filterRef = useRef<SVGFilterElement>(null);
-  const colorMatrixRef = useRef<SVGFEColorMatrixElement>(null);
+  const hueRotateRef = useRef<SVGFEColorMatrixElement>(null);
   const [isVisible, setIsVisible] = useState(true);
-  const [isReady, setIsReady] = useState(false);
   const capability = useDeviceCapability();
-  const animationTime = useRef(0);
+  const hueRotateMotionValue = useMotionValue(0);
+  const hueRotateAnimation = useRef<AnimationPlaybackControls | null>(null);
+  const maskUrl = 'https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png';
+  const isMaskLoaded = useMaskImage(maskUrl);
   
   // Performance configuration based on device capability
   const config = useMemo(() => {
     switch (capability) {
       case 'low':
         return {
-          renderScale: 0.25,
           animationScale: 25,
-          animationSpeed: 15,
+          animationSpeed: 20,
           noiseOpacity: 0.3,
           noiseScale: 2,
           numOctaves: 1,
-          blur: 2,
-          simplifiedFilter: true,
-          fps: 20,
+          blur: 3,
+          filterRegion: 10, // Smaller filter region for performance
         };
       case 'medium':
         return {
-          renderScale: 0.5,
           animationScale: 50,
-          animationSpeed: 25,
+          animationSpeed: 30,
           noiseOpacity: 0.5,
           noiseScale: 1.5,
           numOctaves: 1,
-          blur: 4,
-          simplifiedFilter: true,
-          fps: 25,
+          blur: 5,
+          filterRegion: 20,
         };
       default:
         return {
-          renderScale: 0.75,
           animationScale: 75,
-          animationSpeed: 40,
+          animationSpeed: 45,
           noiseOpacity: 0.65,
           noiseScale: 1.3,
           numOctaves: 2,
-          blur: 6,
-          simplifiedFilter: false,
-          fps: 30,
+          blur: 7,
+          filterRegion: 30,
         };
     }
   }, [capability]);
   
-  const displacementScale = mapRange(config.animationScale, 1, 100, 5, 30);
-
-  // Animation callback that updates the color matrix for smooth morphing
-  const updateAnimation = useCallback((time: number) => {
-    if (!colorMatrixRef.current || !isVisible) return;
-    
-    // Smooth animation using sine waves
-    animationTime.current = time * 0.0001 * config.animationSpeed;
-    
-    // Animate the color matrix values for smooth color transitions
-    const phase = animationTime.current;
-    const r = 2.5 + Math.sin(phase) * 0.5;
-    const g = 2.5 + Math.sin(phase + Math.PI * 0.667) * 0.5;
-    const b = 2.5 + Math.sin(phase + Math.PI * 1.333) * 0.5;
-    
-    const matrixValues = `${r} 0 0 0 0.8  0 ${g} 0 0 0.8  0 0 ${b} 0 0.8  0 0 0 1 0`;
-    colorMatrixRef.current.setAttribute('values', matrixValues);
-  }, [isVisible, config.animationSpeed]);
-
-  const { pause, resume } = useAnimationFrame(updateAnimation, config.fps);
+  const displacementScale = mapRange(config.animationScale, 1, 100, 10, 40);
+  const animationDuration = mapRange(config.animationSpeed, 1, 100, 1000, 50);
 
   // Intersection Observer for visibility detection
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
-        if (entry.isIntersecting) {
-          resume();
-        } else {
-          pause();
-        }
       },
       { threshold: 0.1 }
     );
@@ -240,103 +190,60 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
         observer.unobserve(containerRef.current);
       }
     };
-  }, [pause, resume]);
-
-  // Pause animation when page is not visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        pause();
-      } else {
-        resume();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [pause, resume]);
-
-  // Delay scaling to prevent initial layout jump
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsReady(true);
-    }, 50);
-    return () => clearTimeout(timer);
   }, []);
+
+  // Hue rotate animation
+  useEffect(() => {
+    if (hueRotateRef.current && isVisible && isMaskLoaded) {
+      if (hueRotateAnimation.current) {
+        hueRotateAnimation.current.stop();
+      }
+      
+      hueRotateMotionValue.set(0);
+      hueRotateAnimation.current = animate(hueRotateMotionValue, 360, {
+        duration: animationDuration / 20,
+        repeat: Infinity,
+        repeatType: 'loop',
+        repeatDelay: 0,
+        ease: 'linear',
+        onUpdate: (value: number) => {
+          if (hueRotateRef.current) {
+            hueRotateRef.current.setAttribute('values', String(value));
+          }
+        },
+      });
+
+      // Pause when page is not visible
+      const handleVisibilityChange = () => {
+        if (hueRotateAnimation.current) {
+          if (document.hidden) {
+            hueRotateAnimation.current.pause();
+          } else {
+            hueRotateAnimation.current.play();
+          }
+        }
+      };
+
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        if (hueRotateAnimation.current) {
+          hueRotateAnimation.current.stop();
+        }
+      };
+    }
+  }, [animationDuration, hueRotateMotionValue, isVisible, isMaskLoaded]);
+
+  // Don't render until mask is loaded to prevent cropping
+  if (!isMaskLoaded) {
+    return <div ref={containerRef} style={styles.container} className={className} />;
+  }
 
   // Don't render complex filter if not visible
   if (!isVisible) {
     return <div ref={containerRef} style={styles.container} className={className} />;
   }
-
-  const filterContent = config.simplifiedFilter ? (
-    // Simplified filter for low-end devices - just displacement, no color animation
-    <filter 
-      ref={filterRef}
-      id={id} 
-      x="-50%" 
-      y="-50%" 
-      width="200%" 
-      height="200%"
-    >
-      <feTurbulence
-        result="turbulence"
-        numOctaves={config.numOctaves}
-        baseFrequency={`${mapRange(config.animationScale, 0, 100, 0.002, 0.001)}`}
-        seed="1"
-        type="fractalNoise"
-      />
-      <feDisplacementMap
-        in="SourceGraphic"
-        in2="turbulence"
-        scale={displacementScale}
-        result="output"
-        xChannelSelector="R"
-        yChannelSelector="G"
-      />
-    </filter>
-  ) : (
-    // Standard filter for capable devices with animated color matrix
-    <filter 
-      ref={filterRef}
-      id={id} 
-      x="-50%" 
-      y="-50%" 
-      width="200%" 
-      height="200%"
-    >
-      <feTurbulence
-        result="turbulence"
-        numOctaves={config.numOctaves}
-        baseFrequency={`${mapRange(config.animationScale, 0, 100, 0.001, 0.0005)},${mapRange(
-          config.animationScale,
-          0,
-          100,
-          0.004,
-          0.002
-        )}`}
-        seed="1"
-        type="turbulence"
-      />
-      <feColorMatrix
-        ref={colorMatrixRef}
-        in="turbulence"
-        result="coloredNoise"
-        type="matrix"
-        values="3 0 0 0 0.8  0 3 0 0 0.8  0 0 3 0 0.8  0 0 0 1 0"
-      />
-      <feDisplacementMap
-        in="SourceGraphic"
-        in2="coloredNoise"
-        scale={displacementScale}
-        result="output"
-        xChannelSelector="R"
-        yChannelSelector="G"
-      />
-    </filter>
-  );
 
   return (
     <div
@@ -348,24 +255,66 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
         style={{
           ...styles.filterLayer,
           filter: `url(#${id}) blur(${config.blur}px)`,
-          transform: isReady ? `scale(${1 / config.renderScale})` : 'scale(1)',
-          transformOrigin: 'center',
-          width: isReady ? `${100 * config.renderScale}%` : '100%',
-          height: isReady ? `${100 * config.renderScale}%` : '100%',
-          left: isReady ? `${50 - (50 * config.renderScale)}%` : '0',
-          top: isReady ? `${50 - (50 * config.renderScale)}%` : '0',
         }}
       >
         <svg style={{ position: 'absolute', width: 0, height: 0 }}>
           <defs>
-            {filterContent}
+            <filter 
+              id={id} 
+              x={`-${config.filterRegion}%`}
+              y={`-${config.filterRegion}%`}
+              width={`${100 + config.filterRegion * 2}%`}
+              height={`${100 + config.filterRegion * 2}%`}
+            >
+              {/* Create turbulence pattern */}
+              <feTurbulence
+                result="turbulence"
+                numOctaves={config.numOctaves}
+                baseFrequency={`${mapRange(config.animationScale, 0, 100, 0.001, 0.0005)},${mapRange(
+                  config.animationScale,
+                  0,
+                  100,
+                  0.004,
+                  0.002
+                )}`}
+                seed="1"
+                type="turbulence"
+              />
+              
+              {/* Color the turbulence */}
+              <feColorMatrix
+                in="turbulence"
+                result="coloredNoise"
+                type="matrix"
+                values="3 0 0 0 0.8  3 0 0 0 0.8  3 0 0 0 0.8  1 0 0 0 0"
+              />
+              
+              {/* Displace the source graphic */}
+              <feDisplacementMap
+                in="SourceGraphic"
+                in2="coloredNoise"
+                scale={displacementScale}
+                result="displaced"
+                xChannelSelector="R"
+                yChannelSelector="G"
+              />
+              
+              {/* Apply hue rotation to the final displaced image for animation */}
+              <feColorMatrix
+                ref={hueRotateRef}
+                in="displaced"
+                type="hueRotate"
+                values="0"
+                result="output"
+              />
+            </filter>
           </defs>
         </svg>
         <div
           style={{
             ...styles.backgroundLayer,
-            maskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
-            WebkitMaskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
+            maskImage: `url(${maskUrl})`,
+            WebkitMaskImage: `url(${maskUrl})`,
           }}
         />
       </div>
