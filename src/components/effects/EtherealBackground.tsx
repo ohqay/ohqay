@@ -34,7 +34,7 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = ({ classNam
 
   // Subtle configuration
   const animationScale = 100;
-  const animationSpeed = 35; // Slower animation (was 90)
+  const animationSpeed = 60; // Moderate animation speed
   const noiseOpacity = 0.75; // 25% reduction from original
   const noiseScale = 1.2;
   
@@ -84,7 +84,7 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = ({ classNam
         style={{
           position: 'absolute',
           inset: -displacementScale,
-          filter: `url(#${id}) blur(4px)`,
+          filter: `url(#${id}) blur(8px)`,
         }}
       >
         <svg style={{ position: 'absolute' }}>
@@ -113,7 +113,7 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = ({ classNam
                 in="dist"
                 result="circulation"
                 type="matrix"
-                values="2.5 0 0 0 0.8  2.5 0 0 0 0.8  2.5 0 0 0 0.8  1 0 0 0 0"
+                values="3.5 0 0 0 0.9  3.5 0 0 0 0.9  3.5 0 0 0 0.9  1 0 0 0 0"
               />
               <feDisplacementMap
                 in="SourceGraphic"
@@ -132,7 +132,7 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = ({ classNam
         </svg>
         <div
           style={{
-            backgroundColor: 'hsl(0 0% 15%)', // Darker grey for reduced brightness
+            backgroundColor: 'hsl(0 0% 20%)', // Slightly brighter for smoother gradients
             maskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
             maskSize: 'cover',
             maskRepeat: 'no-repeat',
