@@ -1,5 +1,4 @@
 import React, { useRef, useId, useEffect, useState, useMemo } from 'react';
-import styles from './EtherealBackground.module.css';
 
 interface EtherealBackgroundProps {
   className?: string;
@@ -74,6 +73,39 @@ const useDeviceCapability = () => {
   return capability;
 };
 
+// Styles
+const styles = {
+  container: {
+    position: 'fixed' as const,
+    inset: 0,
+    overflow: 'hidden',
+    zIndex: 0,
+    willChange: 'transform',
+  },
+  filterLayer: {
+    position: 'absolute' as const,
+    willChange: 'filter',
+  },
+  backgroundLayer: {
+    backgroundColor: 'hsl(0 0% 20%)',
+    width: '100%',
+    height: '100%',
+    maskSize: 'cover',
+    maskRepeat: 'no-repeat',
+    maskPosition: 'center',
+    WebkitMaskSize: 'cover',
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskPosition: 'center',
+  },
+  noiseOverlay: {
+    position: 'absolute' as const,
+    inset: 0,
+    backgroundRepeat: 'repeat',
+    mixBlendMode: 'overlay' as const,
+    pointerEvents: 'none' as const,
+  },
+};
+
 export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(({ className }) => {
   const id = useInstanceId();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -144,7 +176,7 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
   // Pause animation when page is not visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      const elements = containerRef.current?.querySelectorAll(`.${styles.etherealFilter}`);
+      const elements = containerRef.current?.querySelectorAll('[data-ethereal-filter]');
       elements?.forEach(el => {
         (el as HTMLElement).style.animationPlayState = document.hidden ? 'paused' : 'running';
       });
@@ -156,9 +188,47 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
     };
   }, []);
 
+  // Inject CSS animation
+  useEffect(() => {
+    const styleId = `ethereal-styles-${id}`;
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @keyframes etherealHueRotate {
+          from { filter: hue-rotate(0deg); }
+          to { filter: hue-rotate(360deg); }
+        }
+        [data-ethereal-filter="${id}"] {
+          animation: etherealHueRotate ${config.animationSpeed / 15}s linear infinite;
+          will-change: filter;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          [data-ethereal-filter="${id}"] {
+            animation: none;
+          }
+        }
+        @supports (-webkit-appearance: none) {
+          [data-ethereal-filter="${id}"] {
+            transform: translateZ(0);
+            -webkit-transform: translateZ(0);
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    return () => {
+      const style = document.getElementById(styleId);
+      if (style) {
+        style.remove();
+      }
+    };
+  }, [id, config.animationSpeed]);
+
   // Don't render complex filter if not visible
   if (!isVisible) {
-    return <div ref={containerRef} className={styles.container} />;
+    return <div ref={containerRef} style={styles.container} className={className} />;
   }
 
   const filterContent = config.simplifiedFilter ? (
@@ -212,11 +282,12 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
   return (
     <div
       ref={containerRef}
-      className={`${styles.container} ${className || ''}`}
+      style={styles.container}
+      className={className}
     >
       <div
-        className={styles.filterLayer}
         style={{
+          ...styles.filterLayer,
           inset: -displacementScale,
           filter: `url(#${id}) blur(${config.blur}px)`,
           transform: `scale(${1 / config.renderScale})`,
@@ -233,19 +304,19 @@ export const EtherealBackground: React.FC<EtherealBackgroundProps> = React.memo(
           </defs>
         </svg>
         <div
-          className={`${styles.backgroundLayer} ${styles.etherealFilter}`}
+          data-ethereal-filter={id}
           style={{
+            ...styles.backgroundLayer,
             maskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
             WebkitMaskImage: `url('https://framerusercontent.com/images/ceBGguIpUU8luwByxuQz79t7To.png')`,
-            animationDuration: `${config.animationSpeed / 15}s`,
           }}
         />
       </div>
 
       {/* Noise overlay - also scaled for performance */}
       <div
-        className={styles.noiseOverlay}
         style={{
+          ...styles.noiseOverlay,
           backgroundImage: `url("https://framerusercontent.com/images/g0QcWrxr87K0ufOxIUFBakwYA8.png")`,
           backgroundSize: config.noiseScale * 200,
           opacity: config.noiseOpacity / 2,
