@@ -1,1 +1,1 @@
-export { EtherealBackground } from './EtherealBackgroundOptimized';
+export { EtherealBackground } from './EtherealBackground';
