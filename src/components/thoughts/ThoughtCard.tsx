@@ -2,7 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { BaseCard } from '@/components/cards';
+import { Badge } from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/utils/date-utils';
+import { fadeInVariants } from '@/config/animations';
 
 interface ThoughtCardProps {
   slug: string;
@@ -29,9 +32,9 @@ export const ThoughtCard: React.FC<ThoughtCardProps> = ({
 }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      initial="hidden"
+      animate="visible"
+      variants={fadeInVariants}
     >
       <Link to={`/thoughts/${slug}`}>
         <BaseCard hoverable className="overflow-hidden h-full flex flex-col">
@@ -64,26 +67,16 @@ export const ThoughtCard: React.FC<ThoughtCardProps> = ({
               {/* Tags */}
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className={cn(
-                      'text-xs px-2 py-1 rounded-full',
-                      'bg-background-secondary text-foreground-secondary'
-                    )}
-                  >
+                  <Badge key={tag} variant="default" size="sm">
                     #{tag}
-                  </span>
+                  </Badge>
                 ))}
               </div>
 
               {/* Meta */}
               <div className="flex items-center justify-between text-sm text-foreground-tertiary">
                 <div className="flex items-center gap-4">
-                  <span>{new Date(date).toLocaleDateString('en-US', { 
-                    month: 'short', 
-                    day: 'numeric',
-                    year: 'numeric'
-                  })}</span>
+                  <span>{formatDate(date)}</span>
                   <span>{readingTime}</span>
                 </div>
                 

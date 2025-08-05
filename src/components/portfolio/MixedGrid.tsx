@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { BaseCard } from '@/components/cards';
+import { CaseStudyIndicator } from '@/components/ui/CaseStudyIndicator';
+import { fadeInVariants } from '@/config/animations';
 
 interface VideoItem {
   id: string;
@@ -103,16 +105,7 @@ export const MixedGrid: React.FC<MixedGridProps> = ({ items, heroVideoId }) => {
               {/* Case study indicator */}
               {video.isCaseStudy && (
                 <div className="absolute top-4 right-4">
-                  <div className={cn(
-                    'w-8 h-8 rounded-full',
-                    'bg-background/80 backdrop-blur-sm',
-                    'flex items-center justify-center',
-                    'text-foreground-secondary'
-                  )}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14M5 12h14" />
-                    </svg>
-                  </div>
+                  <CaseStudyIndicator />
                 </div>
               )}
             </>
@@ -134,9 +127,9 @@ export const MixedGrid: React.FC<MixedGridProps> = ({ items, heroVideoId }) => {
       {/* Hero Reel Section */}
       {heroVideoId && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          initial="hidden"
+          animate="visible"
+          variants={fadeInVariants}
           className="mb-16"
         >
           <h2 className="text-3xl font-bold mb-6">Featured Reel</h2>
@@ -163,9 +156,9 @@ export const MixedGrid: React.FC<MixedGridProps> = ({ items, heroVideoId }) => {
               {groupedVideos['16:9'].map((video) => (
                 <motion.div
                   key={video.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInVariants}
                 >
                   <VideoCard video={video} />
                 </motion.div>
@@ -182,9 +175,9 @@ export const MixedGrid: React.FC<MixedGridProps> = ({ items, heroVideoId }) => {
               {groupedVideos['9:16'].map((video) => (
                 <motion.div
                   key={video.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInVariants}
                 >
                   <VideoCard video={video} />
                 </motion.div>
@@ -201,9 +194,9 @@ export const MixedGrid: React.FC<MixedGridProps> = ({ items, heroVideoId }) => {
               {groupedVideos['1:1'].map((video) => (
                 <motion.div
                   key={video.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeInVariants}
                 >
                   <VideoCard video={video} />
                 </motion.div>

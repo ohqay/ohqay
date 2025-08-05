@@ -2,6 +2,8 @@ import React from 'react';
 import { PageWrapper, Container } from '@/components/common';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { createProjectInquiryEmailUrl } from '@/config/site';
+import { fadeInVariants, staggerContainerVariants } from '@/config/animations';
 
 // Skill categories
 const skills = {
@@ -54,9 +56,9 @@ export const About: React.FC = () => {
         <div className="py-12">
           {/* Hero Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            variants={fadeInVariants}
+            initial="hidden"
+            animate="visible"
             className="mb-16"
           >
             <h1 className="text-5xl md:text-6xl font-bold mb-6">
@@ -78,19 +80,23 @@ export const About: React.FC = () => {
 
           {/* Skills Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            variants={fadeInVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.2 }}
             className="mb-16"
           >
             <h2 className="text-3xl font-bold mb-8">Skills & Expertise</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {Object.entries(skills).map(([key, category], index) => (
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+              variants={staggerContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {Object.entries(skills).map(([key, category]) => (
                 <motion.div
                   key={key}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.3 + index * 0.1 }}
+                  variants={fadeInVariants}
                   className="space-y-4"
                 >
                   <h3 className="text-xl font-semibold">{category.title}</h3>
@@ -107,24 +113,28 @@ export const About: React.FC = () => {
                   </ul>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Process Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
+            variants={fadeInVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.4 }}
             className="mb-16"
           >
             <h2 className="text-3xl font-bold mb-8">My Process</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {processSteps.map((step, index) => (
+            <motion.div 
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+              variants={staggerContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {processSteps.map((step) => (
                 <motion.div
                   key={step.number}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 + index * 0.1 }}
+                  variants={fadeInVariants}
                   className={cn(
                     'p-6 rounded-lg',
                     'bg-background-secondary border border-border',
@@ -140,14 +150,15 @@ export const About: React.FC = () => {
                   </p>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* CTA Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.6 }}
+            variants={fadeInVariants}
+            initial="hidden"
+            animate="visible"
+            transition={{ delay: 0.6 }}
             className="text-center py-16 border-t border-border"
           >
             <h2 className="text-3xl font-bold mb-4">
@@ -157,7 +168,7 @@ export const About: React.FC = () => {
               Let's discuss your project and bring your vision to life.
             </p>
             <a
-              href="mailto:hello@ohqay.com?subject=Project%20Inquiry&body=Hi%20Tarek%2C%0A%0AI%20came%20across%20your%20portfolio%20and%20I'm%20interested%20in%20discussing%20a%20potential%20project.%0A%0AProject%20Details%3A%0A-%20Type%3A%20%0A-%20Timeline%3A%20%0A-%20Budget%20Range%3A%20%0A%0ALooking%20forward%20to%20hearing%20from%20you!%0A%0ABest%2C"
+              href={createProjectInquiryEmailUrl()}
               className={cn(
                 'inline-flex items-center gap-2 px-6 py-3',
                 'bg-primary text-primary-foreground rounded-full',

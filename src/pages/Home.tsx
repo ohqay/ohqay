@@ -2,13 +2,11 @@ import React from 'react';
 import { PageWrapper } from '@/components/common';
 import { Container } from '@/components/common';
 import { CardDeck } from '@/components/cards/CardDeck';
-import { EtherealBackground } from '@/components/effects';
 import { motion } from 'framer-motion';
 
 export const Home: React.FC = () => {
   return (
     <PageWrapper>
-      <EtherealBackground />
       <Container>
         <div className="py-16 md:py-24 relative z-10">
           {/* Centered branding */}

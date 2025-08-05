@@ -1,9 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { PageWrapper, Container, Toast, IconButton } from '@/components/common';
 import { ClapButton } from '@/components/thoughts';
 import { CaseStudyContent } from '@/components/case-study';
 import { getThoughtBySlug, ThoughtData } from '@/lib/content-loader';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import { useClipboard } from '@/hooks/useClipboard';
+import { formatArticleDate } from '@/utils/date-utils';
+import { getTwitterShareUrl, getLinkedInShareUrl, getCurrentUrl } from '@/utils/social-sharing';
 import { motion } from 'framer-motion';
 import { remark } from 'remark';
 import html from 'remark-html';
@@ -11,37 +15,52 @@ import { Twitter, Linkedin, Link, Check } from 'lucide-react';
 
 export const ThoughtDetail: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [thought, setThought] = useState<ThoughtData | null>(null);
-  const [htmlContent, setHtmlContent] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    const loadThought = async () => {
-      if (!slug) return;
-      
-      setLoading(true);
-      const loadedThought = getThoughtBySlug(slug);
-      
-      if (loadedThought) {
-        setThought(loadedThought);
-        
-        // Process markdown to HTML
-        const processedContent = await remark()
-          .use(html)
-          .process(loadedThought.content);
-        setHtmlContent(processedContent.toString());
-      }
-      
-      setLoading(false);
-    };
+  
+  const loadThoughtData = useCallback(async () => {
+    if (!slug) throw new Error('No slug provided');
     
-    loadThought();
+    const loadedThought = getThoughtBySlug(slug);
+    if (!loadedThought) throw new Error('Thought not found');
+    
+    // Process markdown to HTML
+    const processedContent = await remark()
+      .use(html)
+      .process(loadedThought.content);
+    
+    return {
+      thought: loadedThought,
+      htmlContent: processedContent.toString(),
+    };
   }, [slug]);
+  
+  const { data, loading, error } = useAsyncData(loadThoughtData, {
+    dependencies: [slug],
+  });
+  
+  const { copied, copyToClipboard } = useClipboard({
+    successDuration: 2000,
+  });
+  
+  const thought = data?.thought;
+  const htmlContent = data?.htmlContent;
 
   const handleClap = (newCount: number) => {
     // In a real app, this would update the database
     console.log('Clapped!', newCount);
+  };
+  
+  const handleCopyLink = () => {
+    copyToClipboard(getCurrentUrl());
+  };
+  
+  const getShareUrls = () => {
+    const currentUrl = getCurrentUrl();
+    const title = thought?.title || '';
+    
+    return {
+      twitter: getTwitterShareUrl({ url: currentUrl, title }),
+      linkedin: getLinkedInShareUrl({ url: currentUrl, title }),
+    };
   };
 
   if (loading) {
@@ -56,7 +75,7 @@ export const ThoughtDetail: React.FC = () => {
     );
   }
 
-  if (!thought) {
+  if (error || !thought) {
     return <Navigate to="/thoughts" replace />;
   }
 
@@ -98,13 +117,7 @@ export const ThoughtDetail: React.FC = () => {
 
             {/* Meta Info */}
             <div className="flex flex-wrap items-center gap-6 text-sm text-foreground-tertiary mb-8">
-              <span>
-                {new Date(thought.date).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
-              </span>
+              <span>{formatArticleDate(thought.date)}</span>
               <span>{thought.readingTime}</span>
               <div className="flex flex-wrap gap-2">
                 {thought.tags.map((tag) => (
@@ -149,9 +162,7 @@ export const ThoughtDetail: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-sm text-foreground-tertiary mr-2">Share:</span>
                 <a
-                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
-                    thought.title
-                  )}&url=${encodeURIComponent(window.location.href)}`}
+                  href={getShareUrls().twitter}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -162,9 +173,7 @@ export const ThoughtDetail: React.FC = () => {
                   />
                 </a>
                 <a
-                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
-                    window.location.href
-                  )}`}
+                  href={getShareUrls().linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -176,11 +185,7 @@ export const ThoughtDetail: React.FC = () => {
                 </a>
                 <IconButton
                   icon={copied ? <Check className="text-green-500" /> : <Link />}
-                  onClick={() => {
-                    navigator.clipboard.writeText(window.location.href);
-                    setCopied(true);
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
+                  onClick={handleCopyLink}
                   ariaLabel="Copy link"
                 />
               </div>

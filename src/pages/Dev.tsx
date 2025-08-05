@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageWrapper, Container } from '@/components/common';
+import { PortfolioPageTemplate } from '../components/ui/PortfolioPageTemplate';
 import { ResponsiveGrid } from '@/components/portfolio';
 
 // Sample data - replace with actual data fetching
@@ -55,20 +55,12 @@ const devProjects = [
 
 export const Dev: React.FC = () => {
   return (
-    <PageWrapper>
-      <Container size="xl">
-        <div className="py-12">
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold mb-4">Development</h1>
-            <p className="text-lg text-foreground-secondary max-w-3xl">
-              Software development portfolio showcasing web applications, iOS/macOS apps, and CLI tools.
-              Built with modern technologies and best practices.
-            </p>
-          </div>
-          
-          <ResponsiveGrid projects={devProjects} />
-        </div>
-      </Container>
-    </PageWrapper>
+    <PortfolioPageTemplate
+      title="Development"
+      description="Software development portfolio showcasing web applications, iOS/macOS apps, and CLI tools. Built with modern technologies and best practices."
+      containerSize="xl"
+    >
+      <ResponsiveGrid projects={devProjects} />
+    </PortfolioPageTemplate>
   );
 };

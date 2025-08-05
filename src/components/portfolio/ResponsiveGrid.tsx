@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { BaseCard } from '@/components/cards';
+import { DeviceFrame } from '@/components/ui/DeviceFrame';
+import { staggerContainerVariants, fadeInVariants } from '@/config/animations';
 
 interface DevProject {
   id: string;
@@ -51,106 +53,18 @@ const TechIcon: React.FC<{ name: string }> = ({ name }) => {
   return iconMap[name] || <span className="text-xs">{name}</span>;
 };
 
-// Device frames
-const DeviceFrame: React.FC<{ type: DevProject['type']; children: React.ReactNode }> = ({ type, children }) => {
-  if (type === 'web') {
-    return (
-      <div className="relative">
-        <div className="bg-background-secondary rounded-t-lg p-2 flex items-center gap-2">
-          <div className="flex gap-1">
-            <div className="w-3 h-3 rounded-full bg-border" />
-            <div className="w-3 h-3 rounded-full bg-border" />
-            <div className="w-3 h-3 rounded-full bg-border" />
-          </div>
-          <div className="flex-1 bg-background rounded px-2 py-1 text-xs text-foreground-tertiary">
-            localhost:3000
-          </div>
-        </div>
-        <div className="bg-background border-x border-b border-border rounded-b-lg overflow-hidden">
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'ios') {
-    return (
-      <div className="relative mx-auto" style={{ maxWidth: '300px' }}>
-        <div className="bg-background-tertiary rounded-[2.5rem] p-4 shadow-2xl">
-          <div className="bg-background rounded-[2rem] overflow-hidden">
-            {children}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'macos') {
-    return (
-      <div className="relative">
-        <div className="bg-background-secondary rounded-t-lg p-2 flex items-center">
-          <div className="flex gap-1">
-            <div className="w-3 h-3 rounded-full bg-red-500/50" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
-            <div className="w-3 h-3 rounded-full bg-green-500/50" />
-          </div>
-        </div>
-        <div className="bg-background border-x border-b border-border rounded-b-lg overflow-hidden">
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  if (type === 'cli') {
-    return (
-      <div className="bg-background-tertiary rounded-lg p-4 font-mono text-sm">
-        <div className="flex items-center gap-2 mb-2 text-foreground-secondary">
-          <span className="text-green-500">$</span>
-          <span>terminal</span>
-        </div>
-        <div className="bg-background rounded p-4">
-          {children}
-        </div>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
-};
 
 export const ResponsiveGrid: React.FC<ResponsiveGridProps> = ({ projects }) => {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: 'easeOut',
-      },
-    },
-  };
 
   return (
     <motion.div
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-      variants={containerVariants}
+      variants={staggerContainerVariants}
       initial="hidden"
       animate="visible"
     >
       {projects.map((project) => (
-        <motion.div key={project.id} variants={itemVariants}>
+        <motion.div key={project.id} variants={fadeInVariants}>
           <BaseCard
             hoverable
             className={cn(

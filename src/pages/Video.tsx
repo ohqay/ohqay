@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageWrapper, Container } from '@/components/common';
+import { PortfolioPageTemplate } from '../components/ui/PortfolioPageTemplate';
 import { MixedGrid } from '@/components/portfolio';
 
 // Sample data - replace with actual data fetching
@@ -40,20 +40,12 @@ const heroReelId = 'jNQXAC9IVRw'; // Replace with actual hero reel YouTube ID
 
 export const Video: React.FC = () => {
   return (
-    <PageWrapper>
-      <Container size="xl">
-        <div className="py-12">
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold mb-4">Video Editing</h1>
-            <p className="text-lg text-foreground-secondary max-w-3xl">
-              Video editing portfolio featuring commercial work, creative projects, and social media content.
-              From cinematic storytelling to viral social content.
-            </p>
-          </div>
-          
-          <MixedGrid items={videoItems} heroVideoId={heroReelId} />
-        </div>
-      </Container>
-    </PageWrapper>
+    <PortfolioPageTemplate
+      title="Video Editing"
+      description="Video editing portfolio featuring commercial work, creative projects, and social media content. From cinematic storytelling to viral social content."
+      containerSize="xl"
+    >
+      <MixedGrid items={videoItems} heroVideoId={heroReelId} />
+    </PortfolioPageTemplate>
   );
 };

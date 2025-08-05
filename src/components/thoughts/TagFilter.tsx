@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/Badge';
+import { ANIMATION } from '@/config/constants';
 
 interface TagFilterProps {
   tags: string[];
@@ -19,7 +21,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: ANIMATION.durations.fast }}
       className="flex flex-wrap items-center gap-2"
     >
       <span className="text-sm text-foreground-secondary mr-2">Filter by:</span>
@@ -28,22 +30,17 @@ export const TagFilter: React.FC<TagFilterProps> = ({
         const isSelected = selectedTags.includes(tag);
         
         return (
-          <motion.button
+          <Badge
             key={tag}
+            variant={isSelected ? 'primary' : 'default'}
+            size="md"
             onClick={() => onTagToggle(tag)}
-            className={cn(
-              'px-3 py-1 rounded-full text-sm font-medium',
-              'transition-all duration-200',
-              'border',
-              isSelected
-                ? 'bg-primary text-primary-foreground border-primary'
-                : 'bg-background-secondary text-foreground-secondary border-border hover:border-foreground/50'
-            )}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            selected={isSelected}
+            animate
+            className="hover:border-foreground/50"
           >
             #{tag}
-          </motion.button>
+          </Badge>
         );
       })}
       

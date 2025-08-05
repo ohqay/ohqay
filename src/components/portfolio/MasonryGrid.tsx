@@ -2,6 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { BaseCard } from '@/components/cards';
+import { CaseStudyIndicator } from '@/components/ui/CaseStudyIndicator';
+import { fadeInVariants } from '@/config/animations';
+import { GRID_GAPS, GRID_COLUMNS, BREAKPOINTS } from '@/config/constants';
 
 interface MasonryItem {
   id: string;
@@ -27,8 +30,8 @@ interface MasonryGridProps {
 
 export const MasonryGrid: React.FC<MasonryGridProps> = ({
   items,
-  columns = { default: 5, lg: 4, md: 3, sm: 2 },
-  gap = 24,
+  columns = GRID_COLUMNS,
+  gap = GRID_GAPS.md,
 }) => {
   const [columnCount, setColumnCount] = useState(columns.default);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -37,11 +40,11 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
   useEffect(() => {
     const updateColumns = () => {
       const width = window.innerWidth;
-      if (width < 640) {
+      if (width < BREAKPOINTS.sm) {
         setColumnCount(columns.sm);
-      } else if (width < 768) {
+      } else if (width < BREAKPOINTS.md) {
         setColumnCount(columns.md);
-      } else if (width < 1024) {
+      } else if (width < BREAKPOINTS.lg) {
         setColumnCount(columns.lg);
       } else {
         setColumnCount(columns.default);
@@ -75,17 +78,6 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
 
   const columnItems = distributeItems();
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-        ease: 'easeOut',
-      },
-    },
-  };
 
   return (
     <div
@@ -104,7 +96,7 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
               key={item.id}
               initial="hidden"
               animate="visible"
-              variants={itemVariants}
+              variants={fadeInVariants}
               transition={{ delay: (columnIndex + itemIndex) * 0.05 }}
             >
               <BaseCard
@@ -144,16 +136,7 @@ export const MasonryGrid: React.FC<MasonryGridProps> = ({
                   {/* Case study indicator */}
                   {item.isCaseStudy && (
                     <div className="absolute top-4 right-4">
-                      <div className={cn(
-                        'w-8 h-8 rounded-full',
-                        'bg-background/80 backdrop-blur-sm',
-                        'flex items-center justify-center',
-                        'text-foreground-secondary'
-                      )}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M12 5v14M5 12h14" />
-                        </svg>
-                      </div>
+                      <CaseStudyIndicator />
                     </div>
                   )}
                 </div>

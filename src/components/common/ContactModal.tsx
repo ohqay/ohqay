@@ -3,38 +3,25 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Copy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { SITE_CONFIG } from '@/config/site';
+import { ANIMATION, TIMEOUTS } from '@/config/constants';
+import { useClipboard } from '@/hooks/useClipboard';
 
 interface ContactModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const CONTACT_EMAIL = 'hello@ohqay.com';
-
 export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) => {
-  const [copied, setCopied] = React.useState(false);
+  const { copied, copy } = useClipboard({ timeout: TIMEOUTS.COPY_FEEDBACK });
 
   const handleCopyEmail = async () => {
-    try {
-      await navigator.clipboard.writeText(CONTACT_EMAIL);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = CONTACT_EMAIL;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+    await copy(SITE_CONFIG.contact.email);
   };
 
   const handleSendEmail = () => {
     // Create mailto link with intentional action
-    window.location.href = `mailto:${CONTACT_EMAIL}`;
+    window.location.href = `mailto:${SITE_CONFIG.contact.email}`;
     onClose();
   };
 
@@ -65,7 +52,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: ANIMATION.durations.fastest }}
           className="fixed inset-0 z-50 flex items-center justify-center"
         >
           {/* Backdrop */}
@@ -82,7 +69,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: ANIMATION.durations.fastest, ease: 'easeOut' }}
             className={cn(
               'relative bg-background-secondary border border-border',
               'rounded-2xl shadow-xl p-6 mx-4 max-w-md w-full',
@@ -121,7 +108,7 @@ export const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose }) =
                   'bg-background border border-border'
                 )}>
                   <span className="text-foreground font-mono text-sm">
-                    {CONTACT_EMAIL}
+                    {SITE_CONFIG.contact.email}
                   </span>
                   <button
                     onClick={handleCopyEmail}

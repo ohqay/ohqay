@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Container } from './Container';
 import { ContactModal } from './ContactModal';
+import { ANIMATION, TIMEOUTS } from '@/config/constants';
 
 interface NavItem {
   label: string;
@@ -52,11 +53,11 @@ export const Navigation: React.FC = () => {
         setIsPaused(false);
       }
 
-      // Set pause timer to show nav after 2-3 seconds of no scrolling
+      // Set pause timer to show nav after configured timeout of no scrolling
       pauseTimer.current = setTimeout(() => {
         setIsVisible(true);
         setIsPaused(true);
-      }, 2500);
+      }, TIMEOUTS.NAVIGATION_HIDE);
 
       lastScrollY.current = currentScrollY;
     };
@@ -77,7 +78,7 @@ export const Navigation: React.FC = () => {
           initial={{ y: -100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -100, opacity: 0 }}
-          transition={{ duration: 0.3, ease: 'easeOut' }}
+          transition={{ duration: ANIMATION.durations.fast, ease: 'easeOut' }}
           className="fixed top-0 left-0 right-0 z-50 py-4"
         >
           <Container>
@@ -90,7 +91,7 @@ export const Navigation: React.FC = () => {
                 )}
                 initial={{ scale: 0.9 }}
                 animate={{ scale: 1 }}
-                transition={{ duration: 0.2 }}
+                transition={{ duration: ANIMATION.durations.fastest }}
               >
                 <ul className="flex items-center gap-1">
                   {navItems.map((item) => {
@@ -103,7 +104,7 @@ export const Navigation: React.FC = () => {
                           to={item.href}
                           className={cn(
                             'px-4 py-2 rounded-full text-sm font-medium',
-                            'transition-all duration-200',
+                            'transition-all duration-200', // Keep existing Tailwind class for consistency
                             'hover:bg-accent hover:text-accent-foreground',
                             isActive
                               ? 'bg-primary text-primary-foreground'
@@ -120,7 +121,7 @@ export const Navigation: React.FC = () => {
                       onClick={() => setIsContactModalOpen(true)}
                       className={cn(
                         'px-4 py-2 rounded-full text-sm font-medium',
-                        'transition-all duration-200',
+                        'transition-all duration-200', // Keep existing Tailwind class for consistency
                         'hover:bg-accent hover:text-accent-foreground',
                         'text-foreground-secondary'
                       )}

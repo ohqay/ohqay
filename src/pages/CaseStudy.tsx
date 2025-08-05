@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import { useParams, Navigate } from 'react-router-dom';
 import { PageWrapper, Container } from '@/components/common';
 import { 
@@ -7,50 +7,53 @@ import {
   CaseStudyNavigation 
 } from '@/components/case-study';
 import { getCaseStudyBySlug, getAllCaseStudies, CaseStudyData } from '@/lib/content-loader';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { remark } from 'remark';
 import html from 'remark-html';
 
 export const CaseStudy: React.FC = () => {
   const { service, slug } = useParams<{ service: string; slug: string }>();
-  const [caseStudy, setCaseStudy] = useState<CaseStudyData | null>(null);
-  const [htmlContent, setHtmlContent] = useState<string>('');
-  const [relatedProjects, setRelatedProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadCaseStudy = async () => {
-      if (!service || !slug) return;
-      
-      setLoading(true);
-      const study = getCaseStudyBySlug(service, slug);
-      
-      if (study) {
-        setCaseStudy(study);
-        
-        // Process markdown to HTML
-        const processedContent = await remark()
-          .use(html)
-          .process(study.content);
-        setHtmlContent(processedContent.toString());
-        
-        // Get related projects
-        const allStudies = getAllCaseStudies(service);
-        const related = allStudies
-          .filter(s => s.slug !== slug)
-          .map(s => ({
-            slug: s.slug,
-            title: s.title,
-            service: s.service,
-            coverImage: s.coverImage,
-          }));
-        setRelatedProjects(related);
-      }
-      
-      setLoading(false);
-    };
+  
+  const loadCaseStudyData = useCallback(async () => {
+    if (!service || !slug) {
+      throw new Error('Missing service or slug parameter');
+    }
     
-    loadCaseStudy();
+    const study = getCaseStudyBySlug(service, slug);
+    if (!study) {
+      throw new Error('Case study not found');
+    }
+    
+    // Process markdown to HTML
+    const processedContent = await remark()
+      .use(html)
+      .process(study.content);
+    
+    // Get related projects
+    const allStudies = getAllCaseStudies(service);
+    const related = allStudies
+      .filter(s => s.slug !== slug)
+      .map(s => ({
+        slug: s.slug,
+        title: s.title,
+        service: s.service,
+        coverImage: s.coverImage,
+      }));
+    
+    return {
+      caseStudy: study,
+      htmlContent: processedContent.toString(),
+      relatedProjects: related,
+    };
   }, [service, slug]);
+  
+  const { data, loading, error } = useAsyncData(loadCaseStudyData, {
+    dependencies: [service, slug],
+  });
+  
+  const caseStudy = data?.caseStudy;
+  const htmlContent = data?.htmlContent;
+  const relatedProjects = data?.relatedProjects || [];
 
   if (loading) {
     return (
@@ -64,7 +67,7 @@ export const CaseStudy: React.FC = () => {
     );
   }
 
-  if (!caseStudy || !service) {
+  if (error || !caseStudy || !service) {
     return <Navigate to="/404" replace />;
   }
 

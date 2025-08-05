@@ -1,5 +1,5 @@
 import React from 'react';
-import { PageWrapper, Container } from '@/components/common';
+import { PortfolioPageTemplate } from '../components/ui/PortfolioPageTemplate';
 import { MasonryGrid } from '@/components/portfolio';
 
 // Sample data - replace with actual data fetching
@@ -50,20 +50,12 @@ const designItems = [
 
 export const Design: React.FC = () => {
   return (
-    <PageWrapper>
-      <Container size="xl">
-        <div className="py-12">
-          <div className="mb-12">
-            <h1 className="text-5xl font-bold mb-4">Design Portfolio</h1>
-            <p className="text-lg text-foreground-secondary max-w-3xl">
-              Graphic design works showcasing logo design, brand identity, and creative projects.
-              Each piece is crafted with attention to detail and strategic thinking.
-            </p>
-          </div>
-          
-          <MasonryGrid items={designItems} />
-        </div>
-      </Container>
-    </PageWrapper>
+    <PortfolioPageTemplate
+      title="Design Portfolio"
+      description="Graphic design works showcasing logo design, brand identity, and creative projects. Each piece is crafted with attention to detail and strategic thinking."
+      containerSize="xl"
+    >
+      <MasonryGrid items={designItems} />
+    </PortfolioPageTemplate>
   );
 };
