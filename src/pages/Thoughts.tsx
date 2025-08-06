@@ -52,22 +52,20 @@ export const Thoughts: React.FC = () => {
           {/* Results */}
           {filteredThoughts.length > 0 ? (
             <AnimatedGrid
+              items={filteredThoughts}
               columns={{ default: 1, md: 2, lg: 3 }}
               gap={6}
               staggerDelay={0.1}
-              animationVariants={{
-                container: staggerContainerVariants,
-                item: {
-                  hidden: { opacity: 0, y: 20 },
-                  visible: {
-                    opacity: 1,
-                    y: 0,
-                    transition: { duration: 0.5, ease: 'easeOut' },
-                  },
+              containerVariants={staggerContainerVariants}
+              itemVariants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.5, ease: 'easeOut' },
                 },
               }}
-            >
-              {filteredThoughts.map((thought) => (
+              renderItem={(thought) => (
                 <ThoughtCard
                   key={thought.slug}
                   slug={thought.slug}
@@ -80,8 +78,8 @@ export const Thoughts: React.FC = () => {
                   coverImage={thought.coverImage}
                   claps={thought.claps}
                 />
-              ))}
-            </AnimatedGrid>
+              )}
+            />
           ) : (
             <div className="text-center py-16">
               <p className="text-foreground-secondary text-lg">

@@ -19,7 +19,7 @@ export interface ResponsiveColumns {
 
 export interface AnimatedGridProps<T> {
   /** Array of items to render */
-  items: T[];
+  items?: T[];
   /** Responsive column configuration */
   columns: ResponsiveColumns;
   /** Gap between grid items */
@@ -31,7 +31,7 @@ export interface AnimatedGridProps<T> {
   /** Custom animation variants for container */
   containerVariants?: Variants;
   /** Render prop for flexible item rendering */
-  renderItem: (item: T, index: number) => React.ReactNode;
+  renderItem?: (item: T, index: number) => React.ReactNode;
   /** Additional CSS classes for the grid container */
   className?: string;
   /** Grid layout type */
@@ -130,7 +130,7 @@ const generateGridClasses = (columns: ResponsiveColumns): string => {
  * ```
  */
 export function AnimatedGrid<T>({
-  items,
+  items = [],
   columns,
   gap = 6,
   staggerDelay = 0.05,
@@ -141,6 +141,11 @@ export function AnimatedGrid<T>({
   layout = 'grid',
   animation = {},
 }: AnimatedGridProps<T>) {
+  // Early return if no items or renderItem function
+  if (!items || items.length === 0 || !renderItem) {
+    return null;
+  }
+
   const {
     initial = 'hidden',
     animate = 'visible',
